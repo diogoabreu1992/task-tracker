@@ -37,12 +37,14 @@ cd task-tracker
 
 ## Estrutura do projeto
 
+```text
 task-tracker/
-├── Main.java # Interface de linha de comando e laço de leitura dos comandos
-├── Lista.java # Coleção de tarefas e regras para adicionar, buscar e remover
-├── Tarefa.java # Modelo de uma tarefa (id, descrição, status e datas)
-├── .gitignore # Ignora os arquivos .class gerados na compilação
-└── README.md
+├── Main.java      # Interface de linha de comando e laço de leitura dos comandos
+├── Lista.java     # Coleção de tarefas e regras para adicionar, buscar e remover
+├── Tarefa.java    # Modelo de uma tarefa (id, descrição, status e datas)
+├── .gitignore     # Ignora os arquivos .class gerados na compilação
+└── README.md      # Documentação do projeto
+```
 
 
 ## Como compilar e executar
