@@ -72,6 +72,7 @@ Ao iniciar, o programa mostra o prompt `>` e aguarda comandos. Para encerrar, di
 
 ## Exemplo de uso
 
+```bash
 add Estudar Java
 Tarefa adicionada com sucesso (ID: 1)
 add Fazer o README
@@ -91,7 +92,7 @@ delete 2
 Tarefa 2 removida.
 sair
 Até logo!
-
+```
 
 ## Descrição das classes
 
