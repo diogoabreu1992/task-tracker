@@ -1,11 +1,10 @@
-
 # Rastreador de Tarefas (Java)
 
 Uma aplicação de linha de comando (CLI) para acompanhar e gerenciar sua lista de tarefas. Você adiciona tarefas, altera a descrição, muda o status e remove itens, tudo por comandos digitados no terminal.
 
-🔗 **Código-fonte:** https://github.com/diogoabreu1992/Desenvolvedor-Backend/tree/main/task_tracker
+🔗 **Repositório:** https://github.com/diogoabreu1992/task-tracker
 
-Projeto da série de desenvolvimento back-end do [repositório principal](https://github.com/diogoabreu1992/Desenvolvedor-Backend), baseado no desafio [Task Tracker](https://roadmap.sh/projects/task-tracker).
+Projeto baseado no desafio [Task Tracker](https://roadmap.sh/projects/task-tracker), da série de projetos de back-end.
 
 ## Funcionalidades
 
@@ -31,11 +30,9 @@ javac -version
 
 ## Instalação
 
-Clone o repositório e entre na pasta do projeto:
-
 ```bash
-git clone https://github.com/diogoabreu1992/Desenvolvedor-Backend.git
-cd Desenvolvedor-Backend/task_tracker
+git clone https://github.com/diogoabreu1992/task-tracker.git
+cd task-tracker
 ```
 
 ## Estrutura do projeto
