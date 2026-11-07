@@ -1,108 +1,141 @@
-import java.util.Scanner;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 
 public class Main {
 
+    // Caminho relativo: o arquivo fica na pasta de onde o comando é executado
+    private static final Path ARQUIVO = Path.of("tasks.json");
+
     public static void main(String[] args) {
-        Lista lista = new Lista();
-        Scanner entrada = new Scanner(System.in);
-
-        System.out.println("Rastreador de Tarefas. Digite 'ajuda' para ver os comandos.");
-
-        while (true) {
-            System.out.print("> ");
-            String linha = entrada.nextLine().trim();
-            if (linha.isEmpty()) {
-                continue;
-            }
-
-            // separa o comando da primeira palavra e o restante são os argumentos
-            int espaco = linha.indexOf(' ');
-            String comando = (espaco == -1) ? linha : linha.substring(0, espaco);
-            String resto = (espaco == -1) ? "" : linha.substring(espaco + 1).trim();
-
-            if (comando.equals("sair")) {
-                break;
-            }
-
-            switch (comando) {
-                case "ajuda" -> mostrarAjuda();
-
-                case "add" -> {
-                    if (resto.isEmpty()) {
-                        System.out.println("Erro: informe a descrição. Uso: add <descrição>");
-                    } else {
-                        int id = lista.adicionar(resto);
-                        System.out.println("Tarefa adicionada com sucesso (ID: " + id + ")");
-                    }
-                }
-
-                case "update" -> {
-                    String[] p = resto.split(" ", 2);
-                    int id = lerId(p[0]);
-                    if (p.length < 2 || id == -1) {
-                        System.out.println("Uso: update <id> <nova descrição>");
-                    } else if (lista.atualizarDescricao(id, p[1])) {
-                        System.out.println("Tarefa " + id + " atualizada.");
-                    } else {
-                        System.out.println("Erro: tarefa " + id + " não encontrada.");
-                    }
-                }
-
-                case "delete" -> {
-                    int id = lerId(resto);
-                    if (id == -1) {
-                        System.out.println("Uso: delete <id>");
-                    } else if (lista.remover(id)) {
-                        System.out.println("Tarefa " + id + " removida.");
-                    } else {
-                        System.out.println("Erro: tarefa " + id + " não encontrada.");
-                    }
-                }
-
-                case "mark-in-progress" -> alterarStatus(lista, resto, "in-progress");
-
-                case "mark-done" -> alterarStatus(lista, resto, "done");
-
-                case "list" -> {
-                    if (resto.isEmpty()) {
-                        lista.listar(null);
-                    } else if (resto.equals("todo") || resto.equals("in-progress") || resto.equals("done")) {
-                        lista.listar(resto);
-                    } else {
-                        System.out.println("Status inválido. Use: todo, in-progress ou done.");
-                    }
-                }
-
-                default -> System.out.println("Comando desconhecido: " + comando + ". Digite 'ajuda'.");
-            }
+        if (args.length == 0 || args[0].equals("ajuda") || args[0].equals("--help")) {
+            mostrarAjuda();
+            return;
         }
 
-        System.out.println("Até logo!");
-        entrada.close();
+        int codigo;
+        try {
+            Lista lista = new Lista(ARQUIVO);
+            codigo = executar(lista, args);
+        } catch (IOException e) {
+            System.err.println("Erro ao acessar " + ARQUIVO + ": " + e.getMessage());
+            codigo = 1;
+        }
+        System.exit(codigo);
     }
 
-    private static void alterarStatus(Lista lista, String texto, String novoStatus) {
-        int id = lerId(texto);
+    private static int executar(Lista lista, String[] args) throws IOException {
+        String comando = args[0];
+        String[] resto = Arrays.copyOfRange(args, 1, args.length);
+
+        switch (comando) {
+            case "add" -> {
+                String descricao = juntar(resto);
+                if (descricao.isEmpty()) {
+                    return erro("Uso: java Main add <descrição>");
+                }
+                int id = lista.adicionar(descricao);
+                System.out.println("Tarefa adicionada com sucesso (ID: " + id + ")");
+            }
+
+            case "update" -> {
+                if (resto.length < 2) {
+                    return erro("Uso: java Main update <id> <nova descrição>");
+                }
+                int id = lerId(resto[0]);
+                if (id == -1) {
+                    return erro("ID inválido: " + resto[0]);
+                }
+                String novaDescricao = juntar(Arrays.copyOfRange(resto, 1, resto.length));
+                if (novaDescricao.isEmpty()) {
+                    return erro("A nova descrição não pode ser vazia.");
+                }
+                if (!lista.atualizarDescricao(id, novaDescricao)) {
+                    return erro("Tarefa " + id + " não encontrada.");
+                }
+                System.out.println("Tarefa " + id + " atualizada.");
+            }
+
+            case "delete" -> {
+                int id = (resto.length == 1) ? lerId(resto[0]) : -1;
+                if (id == -1) {
+                    return erro("Uso: java Main delete <id>");
+                }
+                if (!lista.remover(id)) {
+                    return erro("Tarefa " + id + " não encontrada.");
+                }
+                System.out.println("Tarefa " + id + " removida.");
+            }
+
+            case "mark-in-progress" -> {
+                return marcar(lista, comando, resto, Tarefa.IN_PROGRESS);
+            }
+
+            case "mark-done" -> {
+                return marcar(lista, comando, resto, Tarefa.DONE);
+            }
+
+            case "list" -> {
+                if (resto.length > 1) {
+                    return erro("Uso: java Main list [todo|in-progress|done]");
+                }
+                String filtro = (resto.length == 1) ? resto[0] : null;
+                if (filtro != null && !Tarefa.STATUS_VALIDOS.contains(filtro)) {
+                    return erro("Status inválido. Use: todo, in-progress ou done.");
+                }
+                List<Tarefa> encontradas = lista.filtrar(filtro);
+                if (encontradas.isEmpty()) {
+                    System.out.println("Nenhuma tarefa encontrada.");
+                } else {
+                    encontradas.forEach(Tarefa::exibir);
+                }
+            }
+
+            default -> {
+                return erro("Comando desconhecido: " + comando + ". Use 'ajuda' para ver os comandos.");
+            }
+        }
+        return 0;
+    }
+
+    private static int marcar(Lista lista, String comando, String[] resto, String novoStatus)
+            throws IOException {
+        int id = (resto.length == 1) ? lerId(resto[0]) : -1;
         if (id == -1) {
-            System.out.println("Informe um ID válido.");
-        } else if (lista.alterarStatus(id, novoStatus)) {
-            System.out.println("Tarefa " + id + " marcada como " + novoStatus + ".");
-        } else {
-            System.out.println("Erro: tarefa " + id + " não encontrada.");
+            return erro("Uso: java Main " + comando + " <id>");
         }
+        if (!lista.alterarStatus(id, novoStatus)) {
+            return erro("Tarefa " + id + " não encontrada.");
+        }
+        System.out.println("Tarefa " + id + " marcada como " + novoStatus + ".");
+        return 0;
     }
 
-    // converte texto em número; retorna -1 se não for um número válido
+    // Junta os argumentos separados por espaço, para aceitar descrições sem aspas
+    private static String juntar(String[] partes) {
+        return String.join(" ", partes).trim();
+    }
+
+    // Converte o texto em ID positivo; retorna -1 se for inválido
     private static int lerId(String texto) {
         try {
-            return Integer.parseInt(texto);
+            int id = Integer.parseInt(texto);
+            return id > 0 ? id : -1;
         } catch (NumberFormatException e) {
             return -1;
         }
     }
 
+    private static int erro(String mensagem) {
+        System.err.println("Erro: " + mensagem);
+        return 1;
+    }
+
     private static void mostrarAjuda() {
-        System.out.println("Comandos disponíveis:");
+        System.out.println("Rastreador de Tarefas");
+        System.out.println("Uso: java Main <comando> [argumentos]");
+        System.out.println();
         System.out.println("  add <descrição>                 adiciona uma tarefa");
         System.out.println("  update <id> <nova descrição>    altera a descrição");
         System.out.println("  delete <id>                     remove uma tarefa");
@@ -110,6 +143,5 @@ public class Main {
         System.out.println("  mark-done <id>                  marca como concluída");
         System.out.println("  list [todo|in-progress|done]    lista as tarefas");
         System.out.println("  ajuda                           mostra esta lista");
-        System.out.println("  sair                            encerra o programa");
     }
 }
